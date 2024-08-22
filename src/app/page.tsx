@@ -7,7 +7,7 @@ import styles from './page.module.css'
 export async function generateMetadata(): Promise<Metadata> {
 
   const frameTags = await getFrameMetadata(
-    `https://thatoneframe.vercel.app/api`,
+    `https://frametwo.vercel.app/api`,
   )
 
   
