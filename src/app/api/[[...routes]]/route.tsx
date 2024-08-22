@@ -1,10 +1,10 @@
 /** @jsxImportSource frog/jsx */
-
+/* eslint-disable */
 import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
-import { Jersey_10 } from "next/font/google";
+
 
 const app = new Frog({
   assetsPath: "/",
@@ -68,7 +68,7 @@ app.frame("/second", (c) => {
           alignItems: "center",
           height: "100vh",
           backgroundColor: `#${fid}`,
-          fontFamily: `jersey_10`,
+
           fontSize: "3rem",
         }}
       >
