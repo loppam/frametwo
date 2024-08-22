@@ -5,10 +5,7 @@ import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { Jersey_10 } from "next/font/google";
-const jersey_10 = Jersey_10({
-  subsets: ["latin"],
-  weight: "400",
-});
+
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
