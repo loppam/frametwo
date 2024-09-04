@@ -5,12 +5,19 @@ import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 
-
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
-
-  title: "get fid color",
+  imageOptions: {
+    fonts: [
+      {
+        name: "Open Sans",
+        weight: 400,
+        source: "google",
+      },
+    ],
+  },
+  title: "fetch art data",
   hub: {
     apiUrl: "https://hubs.airstack.xyz",
     fetchOptions: {
@@ -48,7 +55,7 @@ app.frame("/second", (c) => {
           Verification failed: Invalid frame data
         </div>
       ),
-      intents: [<Button>back</Button>],
+      intents: [<Button>Back</Button>],
     });
   }
 
@@ -93,10 +100,13 @@ app.frame("/", (c) => {
           fontSize: "2rem",
         }}
       >
-        Get FID Color
+        Get your random Push art
       </div>
     ),
-    intents: [<Button>go</Button>],
+    intents: [
+      <Button>Go</Button>,
+      <Button.Link href="https://warpcast.com/push-">Follow Push</Button.Link>,
+    ],
   });
 });
 
