@@ -1,7 +1,7 @@
-import axios, { AxiosResponse } from "axios";
 import axiosClient from "../axiosClient";
-//Define the types for the frame art object and API response
+import { AxiosResponse } from "axios";
 
+// Define the types for the frame art object and API response
 interface ArtData {
   imageUrl: string;
   title: string;
@@ -10,10 +10,7 @@ interface ArtData {
 export async function fetchArtData(fid: number): Promise<ArtData> {
   try {
     console.log("Fetching art data for fid:", fid);
-    const response = await axios.get(
-      "https://ololade-sule.wl.r.appspot.com/art"
-    );
-
+    const response = await axiosClient.get("/art");
     console.log("API response:", response.data);
 
     const artworks = response.data;
@@ -31,12 +28,10 @@ export async function fetchArtData(fid: number): Promise<ArtData> {
     };
   } catch (error) {
     console.error("Error fetching art data:", error);
-    if (axios.isAxiosError(error)) {
-      console.error("Axios error details:", error.response?.data);
-    }
     throw new Error("Failed to fetch art data");
   }
 }
+
 // Define the types for the art object and API response
 interface Art {
   insertedId: any;
@@ -59,7 +54,7 @@ export const updateArt = (
   id: string,
   data: Partial<Art>
 ): Promise<AxiosResponse<Art>> => {
-  return axiosClient.post(`/art/${id}`, data);
+  return axiosClient.patch(`/art/${id}`, data); // Use PATCH for updates
 };
 
 const API_URL = "https://ololade-sule.wl.r.appspot.com";
@@ -67,14 +62,14 @@ const API_URL = "https://ololade-sule.wl.r.appspot.com";
 export const createArt = async (
   artDetails: Art
 ): Promise<AxiosResponse<Art>> => {
-  const response = await axios.post(`${API_URL}/art`, artDetails);
+  const response = await axiosClient.post(`/art`, artDetails); // Use axiosClient instead of axios
   return response;
 };
 
 export const uploadProductPhoto = async (
   formData: FormData
 ): Promise<AxiosResponse<{ url: string }>> => {
-  const response = await axios.post(`${API_URL}/art/upload`, formData, {
+  const response = await axiosClient.post(`/art/upload`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
