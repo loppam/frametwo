@@ -9,18 +9,31 @@ interface ArtData {
 
 export async function fetchArtData(fid: number): Promise<ArtData> {
   try {
-    // Replace this URL with your actual API endpoint
-    const response = await axios.get("https://ololade-sule.wl.r.appspot.com/uploads");
+    console.log("Fetching art data for fid:", fid);
+    const response = await axios.get(
+      "https://ololade-sule.wl.r.appspot.com/art"
+    );
 
-    const data = response.data;
+    console.log("API response:", response.data);
 
-    // Adjust these fields based on your API's response structure
+    const artworks = response.data;
+
+    if (!Array.isArray(artworks) || artworks.length === 0) {
+      throw new Error("No artworks found");
+    }
+
+    // Select a random artwork from the array
+    const randomArtwork = artworks[Math.floor(Math.random() * artworks.length)];
+
     return {
-      imageUrl: data.image_url,
-      title: data.title,
+      imageUrl: randomArtwork.image[0].url,
+      title: randomArtwork.name,
     };
   } catch (error) {
     console.error("Error fetching art data:", error);
+    if (axios.isAxiosError(error)) {
+      console.error("Axios error details:", error.response?.data);
+    }
     throw new Error("Failed to fetch art data");
   }
 }
