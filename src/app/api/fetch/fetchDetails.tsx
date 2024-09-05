@@ -1,6 +1,29 @@
 import axios, { AxiosResponse } from "axios";
 import axiosClient from "../axiosClient";
+//Define the types for the frame art object and API response
 
+interface ArtData {
+  imageUrl: string;
+  title: string;
+}
+
+export async function fetchArtData(fid: number): Promise<ArtData> {
+  try {
+    // Replace this URL with your actual API endpoint
+    const response = await axios.get("https://ololade-sule.wl.r.appspot.com/uploads");
+
+    const data = response.data;
+
+    // Adjust these fields based on your API's response structure
+    return {
+      imageUrl: data.image_url,
+      title: data.title,
+    };
+  } catch (error) {
+    console.error("Error fetching art data:", error);
+    throw new Error("Failed to fetch art data");
+  }
+}
 // Define the types for the art object and API response
 interface Art {
   insertedId: any;

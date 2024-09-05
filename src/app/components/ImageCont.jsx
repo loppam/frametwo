@@ -23,6 +23,7 @@ const ImageCont = () => {
     fetchArts()
       .then((response) => {
         setArts(response.data);
+        console.log(response.data);
         setLoading(false);
       })
       .catch((error) => {

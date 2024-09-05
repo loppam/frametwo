@@ -4,6 +4,7 @@ import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
+import { fetchArtData } from "../fetch/fetchDetails";
 
 const app = new Frog({
   assetsPath: "/",
@@ -28,7 +29,7 @@ const app = new Frog({
   },
 });
 
-app.frame("/second", (c) => {
+app.frame("/second", async (c) => {
   const { frameData, verified } = c;
 
   // Debug logs
@@ -59,31 +60,55 @@ app.frame("/second", (c) => {
     });
   }
 
-  // Frame is valid, proceed with the intended action
+  // Frame is valid, proceed with fetching art data
   const { fid } = frameData as { fid: number };
 
-  console.log("fid:", fid);
+  try {
+    const artData = await fetchArtData(fid);
 
-  return c.res({
-    action: "/",
-    image: (
-      <div
-        style={{
-          color: `white`,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          backgroundColor: `#${fid}`,
-
-          fontSize: "3rem",
-        }}
-      >
-        Your fid color is: #{fid}
-      </div>
-    ),
-    intents: [<Button>back</Button>],
-  });
+    return c.res({
+      action: "/",
+      image: (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            backgroundColor: "black",
+            color: "white",
+            fontSize: "1.5rem",
+          }}
+        >
+          <img
+            src={artData.imageUrl}
+            alt="Random Push Art"
+            style={{ maxWidth: "80%", maxHeight: "70%" }}
+          />
+          <p>{artData.title}</p>
+        </div>
+      ),
+      intents: [<Button>Back</Button>, <Button>Next Art</Button>],
+    });
+  } catch (error) {
+    console.error("Error fetching art data:", error);
+    return c.res({
+      action: "/",
+      image: (
+        <div
+          style={
+            {
+              /* ... error styles ... */
+            }
+          }
+        >
+          Error fetching art data. Please try again.
+        </div>
+      ),
+      intents: [<Button>Back</Button>],
+    });
+  }
 });
 
 app.frame("/", (c) => {
