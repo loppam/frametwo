@@ -2,7 +2,6 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { createArt, uploadProductPhoto } from '../api/fetch/fetchDetails';
 
-// Define types for the response and form data
 interface ArtResponse {
   data: {
     insertedId: string;
@@ -18,32 +17,37 @@ const ArtForm: React.FC = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      // Create the art detail
-      const artResponse: ArtResponse = await createArt({
-        name, hoc, usdt,
-        insertedId: undefined
-      });
+      const artResponse: ArtResponse = await createArt({ name, hoc, usdt, insertedId: '' });
       const artId = artResponse.data.insertedId;
 
-      // Create FormData and append the file and artId
       if (!file) throw new Error('No file selected');
       const formData = new FormData();
       formData.append('file', file);
       formData.append('artId', artId);
 
-      // Upload the image using the new URL
       await uploadProductPhoto(formData);
 
       alert('Art and image uploaded successfully!');
-    } catch (error) {
+      // Reset form fields
+      setName('');
+      setHoc('');
+      setUsdt('');
+      setFile(null);
+    } catch (error: any) {
       console.error('Error uploading art and image:', error);
-      alert('Failed to upload art and image.');
+      alert(error.response?.data?.message || 'Failed to upload art and image.');
     }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      const fileType = selectedFile.type;
+      if (!fileType.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+      setFile(selectedFile);
     }
   };
 
@@ -80,6 +84,7 @@ const ArtForm: React.FC = () => {
         <label>Image:</label>
         <input
           type="file"
+          name='file'
           onChange={handleFileChange}
           required
         />
