@@ -1,6 +1,8 @@
-"use client"; 
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { createArt, uploadProductPhoto } from '../api/fetch/fetchDetails';
+"use client";
+import React, { useState, ChangeEvent, FormEvent } from "react";
+import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "./Firebase"; // Ensure this path is correct
 
 interface ArtResponse {
   data: {
@@ -9,33 +11,39 @@ interface ArtResponse {
 }
 
 const ArtForm: React.FC = () => {
-  const [name, setName] = useState<string>('');
-  const [hoc, setHoc] = useState<string>('');
-  const [usdt, setUsdt] = useState<string>('');
+  const [name, setName] = useState<string>("");
+  const [hoc, setHoc] = useState<string>("");
+  const [usdt, setUsdt] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const artResponse: ArtResponse = await createArt({ name, hoc, usdt, insertedId: '' });
-      const artId = artResponse.data.insertedId;
+      if (!file) throw new Error("No file selected");
 
-      if (!file) throw new Error('No file selected');
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('artId', artId);
+      // Upload image to Firebase Storage
+      const storageRef = ref(storage, `art/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
 
-      await uploadProductPhoto(formData);
+      // Add document to Firestore
+      const docRef = await addDoc(collection(db, "art"), {
+        name,
+        hoc: Number(hoc),
+        usdt: Number(usdt),
+        imageUrl,
+        createdAt: new Date(),
+      });
 
-      alert('Art and image uploaded successfully!');
+      alert("Art and image uploaded successfully!");
       // Reset form fields
-      setName('');
-      setHoc('');
-      setUsdt('');
+      setName("");
+      setHoc("");
+      setUsdt("");
       setFile(null);
     } catch (error: any) {
-      console.error('Error uploading art and image:', error);
-      alert(error.response?.data?.message || 'Failed to upload art and image.');
+      console.error("Error uploading art and image:", error);
+      alert(error.message || "Failed to upload art and image.");
     }
   };
 
@@ -43,8 +51,8 @@ const ArtForm: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       const fileType = selectedFile.type;
-      if (!fileType.startsWith('image/')) {
-        alert('Please select a valid image file.');
+      if (!fileType.startsWith("image/")) {
+        alert("Please select a valid image file.");
         return;
       }
       setFile(selectedFile);
@@ -82,12 +90,7 @@ const ArtForm: React.FC = () => {
       </div>
       <div>
         <label>Image:</label>
-        <input
-          type="file"
-          name='file'
-          onChange={handleFileChange}
-          required
-        />
+        <input type="file" name="file" onChange={handleFileChange} required />
       </div>
       <button type="submit">Submit</button>
     </form>
