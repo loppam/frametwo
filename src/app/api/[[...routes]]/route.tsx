@@ -150,22 +150,32 @@ app.frame("/share", async (c) => {
   const name = c.req.query("name");
   const imageUrl = c.req.query("imageUrl");
 
-  console.log("Received parameters:", { id, name, imageUrl }); // Debug log
+  const debugInfo = `
+    Full URL: ${c.url}
+    ID: ${id || 'Not found'}
+    Name: ${name || 'Not found'}
+    Image URL: ${imageUrl || 'Not found'}
+  `;
 
   if (!id || !name || !imageUrl) {
-    console.error("Missing art information:", { id, name, imageUrl }); // Debug log
     return c.res({
       image: (
         <div style={{
           color: "white",
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          fontSize: "2rem",
+          fontSize: "1rem",
           backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
         }}>
-          Error: Missing art information {id} {name} {imageUrl} omoo
+          <h2 style={{ color: "red" }}>Error: Missing art information</h2>
+          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+            {debugInfo}
+          </pre>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -183,15 +193,19 @@ app.frame("/share", async (c) => {
           height: "100vh",
           backgroundColor: "black",
           color: "white",
-          fontSize: "1.5rem",
+          fontSize: "1rem",
+          padding: "20px",
         }}
       >
         <img
           src={decodeURIComponent(imageUrl)}
           alt={decodeURIComponent(name)}
-          style={{ maxWidth: "80%", maxHeight: "70%" }}
+          style={{ maxWidth: "80%", maxHeight: "60%" }}
         />
         <p>{decodeURIComponent(name)}</p>
+        <pre style={{ fontSize: "0.8rem", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          {debugInfo}
+        </pre>
       </div>
     ),
     intents: [
