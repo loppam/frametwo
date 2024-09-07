@@ -39,27 +39,24 @@ const app = new Frog({
 // Function to fetch a random art piece from Firestore
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
-  const q = query(artCollection, limit(10)); // Fetch 10 documents and pick a random one
-  const querySnapshot = await getDocs(q);
+  const querySnapshot = await getDocs(artCollection);
+  
+  if (querySnapshot.empty) {
+    throw new Error("No art found");
+  }
   const artList = querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
+    ...doc.data() as Art, // Cast data to Art type
+    id: doc.id, // Moved id after spread to avoid overwriting
   }));
 
   const randomIndex = Math.floor(Math.random() * artList.length);
   const randomArt = artList[randomIndex];
-  if (querySnapshot.empty) {
-    throw new Error("No art found");
-  }
-
-  const doc = querySnapshot.docs[0];
-  const data = doc.data();
 
   // Ensure type safety with TypeScript
   const art: Art = {
-    id: doc.id,
-    name: data.name,
-    imageUrl: data.imageUrl,
+    id: randomArt.id,
+    name: randomArt.name,
+    imageUrl: randomArt.imageUrl,
   };
 
   return art;
@@ -91,6 +88,10 @@ app.frame("/art", async (c) => {
   try {
     const art = await fetchRandomArt();
 
+    if (!art || !art.imageUrl) {
+      throw new Error("Invalid art data");
+    }
+
     return c.res({
       image: (
         <div
@@ -114,8 +115,8 @@ app.frame("/art", async (c) => {
         </div>
       ),
       intents: [
-        <Button action="/" >Back</Button>,
-        <Button action="/art">Next Art</Button>,
+        <Button action="/">Back</Button>,
+        <Button action="/share">Share</Button>,
       ],
     });
   } catch (error) {
@@ -130,6 +131,7 @@ app.frame("/art", async (c) => {
             alignItems: "center",
             height: "100vh",
             fontSize: "2rem",
+            backgroundColor: "black",
           }}
         >
           Error fetching art. Please try again.
@@ -138,6 +140,41 @@ app.frame("/art", async (c) => {
       intents: [<Button action="/">Back</Button>],
     });
   }
+});
+
+// Share frame
+app.frame("/share", async (c) => {
+  const art = await fetchRandomArt(); // Fetch the art again to ensure we have the latest
+
+  return c.res({
+    image: (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "black",
+          color: "white",
+          fontSize: "1.5rem",
+        }}
+      >
+        <img
+          src={art.imageUrl}
+          alt={art.name}
+          style={{ maxWidth: "80%", maxHeight: "70%" }}
+        />
+        <p>{art.name}</p>
+      </div>
+    ),
+    intents: [
+      <Button.Reset>Cancel</Button.Reset>,
+      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${art.name}&embeds[]=${c.url}`}>
+        Share on Warpcast
+      </Button.Link>,
+    ],
+  });
 });
 
 // Export the Frog app handlers for GET and POST requests
