@@ -146,12 +146,14 @@ app.frame("/art", async (c) => {
 
 // Share frame
 app.frame("/share", async (c) => {
-  const { searchParams } = new URL(c.url);
-  const id = searchParams.get('id');
-  const name = searchParams.get('name');
-  const imageUrl = searchParams.get('imageUrl');
+  const id = c.req.query("id");
+  const name = c.req.query("name");
+  const imageUrl = c.req.query("imageUrl");
+
+  console.log("Received parameters:", { id, name, imageUrl }); // Debug log
 
   if (!id || !name || !imageUrl) {
+    console.error("Missing art information:", { id, name, imageUrl }); // Debug log
     return c.res({
       image: (
         <div style={{
@@ -185,16 +187,16 @@ app.frame("/share", async (c) => {
         }}
       >
         <img
-          src={imageUrl}
-          alt={name}
+          src={decodeURIComponent(imageUrl)}
+          alt={decodeURIComponent(name)}
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
-        <p>{name}</p>
+        <p>{decodeURIComponent(name)}</p>
       </div>
     ),
     intents: [
       <Button.Reset>Cancel</Button.Reset>,
-      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${name}&embeds[]=${c.url}`}>
+      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${encodeURIComponent(name)}&embeds[]=${encodeURIComponent(c.url)}`}>
         Share on Warpcast
       </Button.Link>,
     ],
