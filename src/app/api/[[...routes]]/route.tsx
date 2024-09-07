@@ -1,12 +1,10 @@
 /** @jsxImportSource frog/jsx */
-/* eslint-disable react/jsx-key */
-/* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
-import { collection, getDocs, limit, query } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../components/Firebase";
 
-// Define the type for the art data fetched from Firestore
+// Define the type for the art data
 type Art = {
   id: string;
   name: string;
@@ -26,14 +24,6 @@ const app = new Frog({
     ],
   },
   title: "Fetch Art Data",
-  hub: {
-    apiUrl: "https://hubs.airstack.xyz",
-    fetchOptions: {
-      headers: {
-        "x-airstack-hubs": "1765e8aa5090e480aa53fb9f3955c6dbb",
-      },
-    },
-  },
 });
 
 // Function to fetch a random art piece from Firestore
@@ -45,21 +35,14 @@ async function fetchRandomArt(): Promise<Art> {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...doc.data() as Art, // Cast data to Art type
-    id: doc.id, // Moved id after spread to avoid overwriting
+    ...doc.data() as Art,
+    id: doc.id,
   }));
 
   const randomIndex = Math.floor(Math.random() * artList.length);
   const randomArt = artList[randomIndex];
 
-  // Ensure type safety with TypeScript
-  const art: Art = {
-    id: randomArt.id,
-    name: randomArt.name,
-    imageUrl: randomArt.imageUrl,
-  };
-
-  return art;
+  return randomArt;
 }
 
 // Home frame
@@ -92,7 +75,8 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
-    const shareUrl = `/share?id=${encodeURIComponent(art.id)}&name=${encodeURIComponent(art.name)}&imageUrl=${encodeURIComponent(art.imageUrl)}`;
+    const encodedArt = encodeURIComponent(JSON.stringify(art));
+    const shareUrl = `/share?art=${encodedArt}`;
 
     return c.res({
       image: (
@@ -114,7 +98,6 @@ app.frame("/art", async (c) => {
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
           <p>{art.name}</p>
-          <p style={{ fontSize: "0.8rem" }}>Share URL: {shareUrl}</p>
         </div>
       ),
       intents: [
@@ -148,18 +131,24 @@ app.frame("/art", async (c) => {
 // Share frame
 app.frame("/share", async (c) => {
   const { searchParams } = new URL(c.url);
-  const id = searchParams.get('id');
-  const name = searchParams.get('name');
-  const imageUrl = searchParams.get('imageUrl');
+  const encodedArt = searchParams.get('art');
+  let currentArt: Art | null = null;
+
+  if (encodedArt) {
+    try {
+      currentArt = JSON.parse(decodeURIComponent(encodedArt)) as Art;
+    } catch (error) {
+      console.error("Error parsing art data:", error);
+    }
+  }
 
   const debugInfo = `
     Full URL: ${c.url}
-    ID: ${id || 'Not found'}
-    Name: ${name || 'Not found'}
-    Image URL: ${imageUrl || 'Not found'}
+    Encoded Art: ${encodedArt || 'Not found'}
+    Decoded Art: ${JSON.stringify(currentArt, null, 2)}
   `;
 
-  if (!id || !name || !imageUrl) {
+  if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
         <div style={{
@@ -174,7 +163,7 @@ app.frame("/share", async (c) => {
           padding: "20px",
           textAlign: "left",
         }}>
-          <h2 style={{ color: "red" }}>Error: Missing art information</h2>
+          <h2 style={{ color: "red" }}>Error: No art information found</h2>
           <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
             {debugInfo}
           </pre>
@@ -200,11 +189,11 @@ app.frame("/share", async (c) => {
         }}
       >
         <img
-          src={decodeURIComponent(imageUrl)}
-          alt={decodeURIComponent(name)}
+          src={currentArt.imageUrl}
+          alt={currentArt.name}
           style={{ maxWidth: "80%", maxHeight: "60%" }}
         />
-        <p>{decodeURIComponent(name)}</p>
+        <p>{currentArt.name}</p>
         <pre style={{ fontSize: "0.8rem", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
           {debugInfo}
         </pre>
@@ -212,7 +201,7 @@ app.frame("/share", async (c) => {
     ),
     intents: [
       <Button.Reset>Cancel</Button.Reset>,
-      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${encodeURIComponent(name)}&embeds[]=${encodeURIComponent(c.url)}`}>
+      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${encodeURIComponent(currentArt.name)}&embeds[]=${encodeURIComponent(c.url)}`}>
         Share on Warpcast
       </Button.Link>,
     ],
