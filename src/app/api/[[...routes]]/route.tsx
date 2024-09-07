@@ -90,6 +90,8 @@ app.frame("/art", async (c) => {
     const encodedArt = Buffer.from(JSON.stringify(art)).toString('base64');
     const mintUrl = `/mint?art=${encodedArt}`;
 
+    console.log("Art frame - Encoded art:", encodedArt); // Debug log
+
     return c.res({
       image: (
         <div
@@ -110,6 +112,7 @@ app.frame("/art", async (c) => {
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
           <p>{art.name}</p>
+          <p style={{ fontSize: "0.8rem" }}>Debug: {encodedArt.slice(0, 20)}...</p>
         </div>
       ),
       intents: [
@@ -142,13 +145,19 @@ app.frame("/art", async (c) => {
 
 // Mint frame
 app.frame("/mint", async (c) => {
-  const { searchParams } = new URL(c.url);
-  const encodedArt = searchParams.get('art');
+  console.log("Mint frame - Full URL:", c.url); // Debug log
+  console.log("Mint frame - Search params:", c.req.query); // Debug log
+
+  const encodedArt = c.req.query('art');
+  console.log("Mint frame - Encoded art from query:", encodedArt); // Debug log
+
   let currentArt: Art | null = null;
 
   if (encodedArt) {
     try {
-      currentArt = JSON.parse(Buffer.from(encodedArt, 'base64').toString()) as Art;
+      const decodedArt = Buffer.from(encodedArt, 'base64').toString();
+      console.log("Mint frame - Decoded art:", decodedArt); // Debug log
+      currentArt = JSON.parse(decodedArt) as Art;
     } catch (error) {
       console.error("Error parsing art data:", error);
     }
@@ -171,6 +180,8 @@ app.frame("/mint", async (c) => {
         }}>
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
           <p>Encoded Art: {encodedArt || 'Not found'}</p>
+          <p>Full URL: {c.url}</p>
+          <p>Search Params: {JSON.stringify(c.req.query)}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
