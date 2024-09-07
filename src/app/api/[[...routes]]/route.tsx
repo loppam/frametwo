@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
-import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../components/Firebase";
 
 // Define the type for the art data
@@ -12,6 +12,9 @@ type Art = {
   name: string;
   imageUrl: string;
 };
+
+// Create a cache to store the art data
+const artCache = new Map<string, Art>();
 
 // Initialize Frog app
 const app = new Frog({
@@ -25,7 +28,7 @@ const app = new Frog({
       },
     ],
   },
-  title: "Fetch Art Data",
+  title: "Random Art Share",
 });
 
 // Function to fetch a random art piece from Firestore
@@ -44,11 +47,20 @@ async function fetchRandomArt(): Promise<Art> {
   const randomIndex = Math.floor(Math.random() * artList.length);
   const randomArt = artList[randomIndex];
 
+  // Cache the art using its name as the key
+  artCache.set(randomArt.name, randomArt);
+
   return randomArt;
 }
 
 // Function to fetch art by name from Firestore
 async function fetchArtByName(name: string): Promise<Art | null> {
+  // Check cache first
+  if (artCache.has(name)) {
+    return artCache.get(name)!;
+  }
+
+  // If not in cache, fetch from Firestore
   const artCollection = collection(db, "art");
   const q = query(artCollection, where("name", "==", name));
   const querySnapshot = await getDocs(q);
@@ -58,17 +70,12 @@ async function fetchArtByName(name: string): Promise<Art | null> {
   }
 
   const doc = querySnapshot.docs[0];
-  return { ...doc.data() as Art, id: doc.id };
-}
+  const art = { ...doc.data() as Art, id: doc.id };
 
-// Function to mint NFT (save to Firestore)
-async function mintNFT(address: string, art: Art) {
-  const mintsCollection = collection(db, "mints");
-  await addDoc(mintsCollection, {
-    address,
-    artId: art.id,
-    mintedAt: new Date(),
-  });
+  // Cache the fetched art
+  artCache.set(name, art);
+
+  return art;
 }
 
 // Home frame
@@ -125,7 +132,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>Mint</Button>,
+        <Button action={`/share?name=${encodeURIComponent(art.name)}`}>Share</Button>,
       ],
     });
   } catch (error) {
@@ -151,8 +158,8 @@ app.frame("/art", async (c) => {
   }
 });
 
-// Mint frame
-app.frame("/mint", async (c) => {
+// Share frame
+app.frame("/share", async (c) => {
   const artName = c.req.query("name");
   
   if (typeof artName !== 'string') {
@@ -171,7 +178,6 @@ app.frame("/mint", async (c) => {
           textAlign: "left",
         }}>
           <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
-          <p>Art Name: {artName}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -179,9 +185,9 @@ app.frame("/mint", async (c) => {
   }
 
   const decodedArtName = decodeURIComponent(artName);
-  const currentArt = await fetchArtByName(decodedArtName);
+  const art = await fetchArtByName(decodedArtName);
 
-  if (!currentArt || !currentArt.imageUrl) {
+  if (!art) {
     return c.res({
       image: (
         <div style={{
@@ -196,69 +202,14 @@ app.frame("/mint", async (c) => {
           padding: "20px",
           textAlign: "left",
         }}>
-          <h2 style={{ color: "red" }}>Error: No art information found</h2>
-          <p>Art Name: {decodedArtName}</p>
+          <h2 style={{ color: "red" }}>Error: Art not found</h2>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
     });
   }
-
-  const { status } = c;
-  const address = c.frameData?.address;
-
-  if (status === 'response' && address) {
-    try {
-      // Fetch the art data again before minting
-      const artToMint = await fetchArtByName(decodedArtName);
-      if (!artToMint) {
-        throw new Error("Art not found when trying to mint");
-      }
-      await mintNFT(address, artToMint);
-      return c.res({
-        image: (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100vh",
-              backgroundColor: "black",
-              color: "white",
-              fontSize: "1rem",
-              padding: "20px",
-            }}
-          >
-            <p>NFT minted successfully!</p>
-            <p>Address: {address}</p>
-            <p>Art: {artToMint.name}</p>
-          </div>
-        ),
-        intents: [<Button action="/">Back to Home</Button>],
-      });
-    } catch (error) {
-      console.error("Error minting NFT:", error);
-      return c.res({
-        image: (
-          <div
-            style={{
-              color: "white",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100vh",
-              fontSize: "2rem",
-              backgroundColor: "black",
-            }}
-          >
-            Error minting NFT. Please try again.
-          </div>
-        ),
-        intents: [<Button action="/">Back to Home</Button>],
-      });
-    }
-  }
+  const shareText = `Check out this amazing art: ${art.name}`;
+  const frameUrl = `${process.env.NEXT_PUBLIC_HOST}/api`;
 
   return c.res({
     image: (
@@ -276,18 +227,40 @@ app.frame("/mint", async (c) => {
         }}
       >
         <img
-          src={currentArt.imageUrl}
-          alt={currentArt.name}
+          src={art.imageUrl}
+          alt={art.name}
           style={{ maxWidth: "80%", maxHeight: "60%" }}
         />
-        <p>{currentArt.name}</p>
-        <p>Ready to mint this artwork?</p>
+        <p>{art.name}</p>
+        <p>Ready to share?</p>
       </div>
     ),
     intents: [
       <Button action="/">Cancel</Button>,
-      <Button.Mint target="/mint">Mint NFT</Button.Mint>,
+      <Button action="post">Share on Warpcast</Button>,
     ],
+  });
+});
+
+// Handle post action
+app.post("/share", async (c) => {
+  const artName = c.req.query("name");
+  if (typeof artName !== 'string') {
+    return c.json({ message: "Invalid art name" }, 400);
+  }
+
+  const decodedArtName = decodeURIComponent(artName);
+  const art = await fetchArtByName(decodedArtName);
+  if (!art) {
+    return c.json({ message: "Art not found" }, 404);
+  }
+
+  const shareText = `Check out this amazing art: ${art.name}`;
+  const frameUrl = `${process.env.NEXT_PUBLIC_HOST}/api`;
+
+  return c.json({
+    cast: shareText,
+    frames: [frameUrl],
   });
 });
 
