@@ -77,9 +77,6 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
-    const encodedArt = encodeURIComponent(JSON.stringify(art));
-    const shareUrl = `/share?art=${encodedArt}`;
-
     return c.res({
       image: (
         <div
@@ -104,7 +101,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={shareUrl}>Share</Button>,
+        <Button action="/share">Share</Button>,
       ],
     });
   } catch (error) {
@@ -132,82 +129,62 @@ app.frame("/art", async (c) => {
 
 // Share frame
 app.frame("/share", async (c) => {
-  const { searchParams } = new URL(c.url);
-  const encodedArt = searchParams.get('art');
-  let currentArt: Art | null = null;
+  try {
+    const art = await fetchRandomArt();
 
-  if (encodedArt) {
-    try {
-      currentArt = JSON.parse(decodeURIComponent(encodedArt)) as Art;
-    } catch (error) {
-      console.error("Error parsing art data:", error);
+    if (!art || !art.imageUrl) {
+      throw new Error("Invalid art data");
     }
-  }
 
-  const debugInfo = `
-    Full URL: ${c.url}
-    Encoded Art: ${encodedArt || 'Not found'}
-    Decoded Art: ${JSON.stringify(currentArt, null, 2)}
-  `;
-
-  if (!currentArt || !currentArt.imageUrl) {
+    return c.res({
+      image: (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            backgroundColor: "black",
+            color: "white",
+            fontSize: "1rem",
+            padding: "20px",
+          }}
+        >
+          <img
+            src={art.imageUrl}
+            alt={art.name}
+            style={{ maxWidth: "80%", maxHeight: "60%" }}
+          />
+          <p>{art.name}</p>
+        </div>
+      ),
+      intents: [
+        <Button.Reset>Cancel</Button.Reset>,
+        <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${encodeURIComponent(art.name)}&embeds[]=${encodeURIComponent(c.url)}`}>
+          Share on Warpcast
+        </Button.Link>,
+      ],
+    });
+  } catch (error) {
+    console.error("Error fetching art for sharing:", error);
     return c.res({
       image: (
         <div style={{
           color: "white",
           display: "flex",
-          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          fontSize: "1rem",
+          fontSize: "2rem",
           backgroundColor: "black",
-          padding: "20px",
-          textAlign: "left",
         }}>
-          <h2 style={{ color: "red" }}>Error: No art information found</h2>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-            {debugInfo}
-          </pre>
+          Error fetching art for sharing. Please try again.
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
     });
   }
-
-  return c.res({
-    image: (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          backgroundColor: "black",
-          color: "white",
-          fontSize: "1rem",
-          padding: "20px",
-        }}
-      >
-        <img
-          src={currentArt.imageUrl}
-          alt={currentArt.name}
-          style={{ maxWidth: "80%", maxHeight: "60%" }}
-        />
-        <p>{currentArt.name}</p>
-        <pre style={{ fontSize: "0.8rem", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-          {debugInfo}
-        </pre>
-      </div>
-    ),
-    intents: [
-      <Button.Reset>Cancel</Button.Reset>,
-      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${encodeURIComponent(currentArt.name)}&embeds[]=${encodeURIComponent(c.url)}`}>
-        Share on Warpcast
-      </Button.Link>,
-    ],
-  });
 });
 
 // Export the Frog app handlers for GET and POST requests
