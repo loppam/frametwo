@@ -1,4 +1,6 @@
 /** @jsxImportSource frog/jsx */
+/* eslint-disable react/jsx-key */
+/* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
 import { collection, getDocs } from "firebase/firestore";
