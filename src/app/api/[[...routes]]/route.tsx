@@ -114,6 +114,7 @@ app.frame("/art", async (c) => {
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
           <p>{art.name}</p>
+          <p style={{ fontSize: "0.8rem" }}>Share URL: {shareUrl}</p>
         </div>
       ),
       intents: [
@@ -146,9 +147,10 @@ app.frame("/art", async (c) => {
 
 // Share frame
 app.frame("/share", async (c) => {
-  const id = c.req.query("id");
-  const name = c.req.query("name");
-  const imageUrl = c.req.query("imageUrl");
+  const { searchParams } = new URL(c.url);
+  const id = searchParams.get('id');
+  const name = searchParams.get('name');
+  const imageUrl = searchParams.get('imageUrl');
 
   const debugInfo = `
     Full URL: ${c.url}
