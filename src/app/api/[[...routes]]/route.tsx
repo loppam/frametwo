@@ -13,6 +13,9 @@ type Art = {
   imageUrl: string;
 };
 
+// Create a cache to store the art data
+const artCache = new Map<string, Art>();
+
 // Initialize Frog app
 const app = new Frog({
   basePath: "/api",
@@ -58,7 +61,9 @@ async function mintNFT(address: string, art: Art) {
 }
 
 // Home frame
-app.frame("/", async (c) => {
+app.frame("/", (c) => {
+  // Clear the cache when returning to home
+  artCache.clear();
   return c.res({
     image: (
       <div
@@ -87,10 +92,9 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
-    const encodedArt = Buffer.from(JSON.stringify(art)).toString('base64');
-    const mintUrl = `/mint?art=${encodedArt}`;
-
-    console.log("Art frame - Encoded art:", encodedArt); // Debug log
+    // Cache the art data
+    const cacheKey = `art_${Date.now()}`;
+    artCache.set(cacheKey, art);
 
     return c.res({
       image: (
@@ -112,12 +116,11 @@ app.frame("/art", async (c) => {
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
           <p>{art.name}</p>
-          <p style={{ fontSize: "0.8rem" }}>Debug: {encodedArt.slice(0, 20)}...</p>
         </div>
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={mintUrl}>Mint</Button>,
+        <Button action={`/mint?key=${cacheKey}`}>Mint</Button>,
       ],
     });
   } catch (error) {
@@ -145,23 +148,8 @@ app.frame("/art", async (c) => {
 
 // Mint frame
 app.frame("/mint", async (c) => {
-  console.log("Mint frame - Full URL:", c.url); // Debug log
-  console.log("Mint frame - Search params:", c.req.query); // Debug log
-
-  const encodedArt = c.req.query('art');
-  console.log("Mint frame - Encoded art from query:", encodedArt); // Debug log
-
-  let currentArt: Art | null = null;
-
-  if (encodedArt) {
-    try {
-      const decodedArt = Buffer.from(encodedArt, 'base64').toString();
-      console.log("Mint frame - Decoded art:", decodedArt); // Debug log
-      currentArt = JSON.parse(decodedArt) as Art;
-    } catch (error) {
-      console.error("Error parsing art data:", error);
-    }
-  }
+  const cacheKey = c.req.query('key') as string;
+  const currentArt = artCache.get(cacheKey);
 
   if (!currentArt || !currentArt.imageUrl) {
     return c.res({
@@ -179,9 +167,8 @@ app.frame("/mint", async (c) => {
           textAlign: "left",
         }}>
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
-          <p>Encoded Art: {encodedArt || 'Not found'}</p>
-          <p>Full URL: {c.url}</p>
-          <p>Search Params: {JSON.stringify(c.req.query)}</p>
+          <p>Cache Key: {cacheKey}</p>
+          <p>Cache Size: {artCache.size}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -194,6 +181,8 @@ app.frame("/mint", async (c) => {
   if (status === 'response' && address) {
     try {
       await mintNFT(address, currentArt);
+      // Clear the cache after successful minting
+      artCache.delete(cacheKey);
       return c.res({
         image: (
           <div
