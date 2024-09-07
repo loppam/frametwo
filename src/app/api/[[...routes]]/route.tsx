@@ -35,12 +35,12 @@ const app = new Frog({
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
-
+  
   if (querySnapshot.empty) {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...(doc.data() as Art),
+    ...doc.data() as Art,
     id: doc.id,
   }));
 
@@ -88,7 +88,7 @@ app.frame("/art", async (c) => {
   try {
     const art = await fetchRandomArt();
 
-    if (!art || !art.imageUrl) {
+    if (!art || !art.imageUrl || !art.name) {
       throw new Error("Invalid art data");
     }
 
@@ -119,9 +119,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>
-          Mint
-        </Button>,
+        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>Mint</Button>,
       ],
     });
   } catch (error) {
@@ -149,30 +147,55 @@ app.frame("/art", async (c) => {
 
 // Mint frame
 app.frame("/mint", async (c) => {
-  const artName = decodeURIComponent(c.req.query("name") as string);
-  const currentArt = artCache.get(artName);
+  const artName = c.req.query("name");
+  
+  if (typeof artName !== 'string') {
+    return c.res({
+      image: (
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
+        }}>
+          <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
+          <p>Art Name: {artName}</p>
+          <p>Cache Size: {artCache.size}</p>
+          <p>Cache Keys: {Array.from(artCache.keys()).join(', ')}</p>
+        </div>
+      ),
+      intents: [<Button action="/">Back to Home</Button>],
+    });
+  }
+
+  const decodedArtName = decodeURIComponent(artName);
+  const currentArt = artCache.get(decodedArtName);
 
   if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "left",
-          }}
-        >
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
+        }}>
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
-          <p>Art Name: {artName}</p>
+          <p>Art Name: {decodedArtName}</p>
           <p>Cache Size: {artCache.size}</p>
-          <p>Cache Keys: {Array.from(artCache.keys()).join(", ")}</p>
+          <p>Cache Keys: {Array.from(artCache.keys()).join(', ')}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -182,11 +205,11 @@ app.frame("/mint", async (c) => {
   const { status } = c;
   const address = c.frameData?.address;
 
-  if (status === "response" && address) {
+  if (status === 'response' && address) {
     try {
       await mintNFT(address, currentArt);
       // Clear the cache after successful minting
-      artCache.delete(artName);
+      artCache.delete(decodedArtName);
       return c.res({
         image: (
           <div
