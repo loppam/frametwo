@@ -1,34 +1,47 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, DocumentData } from 'firebase/firestore';
-import { db } from './Firebase'
+import Modal from "./Modal";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./Firebase";
+import Image from 'next/image';
 
-interface Art {
+type Art = {
   id: string;
   name: string;
+  hoc: number;
+  usdt: number;
   imageUrl: string;
-}
+};
 
-const ImageCont: React.FC = () => {
+const ImageCont = () => {
   const [arts, setArts] = useState<Art[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [frames, setFrames] = useState<Art[]>(Array(9).fill(null));
+  const [open, setOpen] = useState(false);
+  const [selectedArt, setSelectedArt] = useState<Art | null>(null);
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleOpen = (art: Art) => {
+    setOpen(true);
+    setSelectedArt(art);
+  };
 
   useEffect(() => {
     const fetchArts = async () => {
       try {
-        const artCollection = collection(db, 'art');
+        const artCollection = collection(db, "art");
         const artSnapshot = await getDocs(artCollection);
-        const artList = artSnapshot.docs.map(doc => ({
+        const artList = artSnapshot.docs.map((doc) => ({
           id: doc.id,
-          name: doc.data().name,
-          imageUrl: doc.data().imageUrl
-        }));
+          ...doc.data(),
+        })) as Art[];
         setArts(artList);
         setLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+      } catch (err: any) {
+        setError(err);
         setLoading(false);
       }
     };
@@ -36,36 +49,38 @@ const ImageCont: React.FC = () => {
     fetchArts();
   }, []);
 
-  const handleFrameClick = (index: number) => {
-    if (arts.length === 0) return;
-    
-    const randomArt = arts[Math.floor(Math.random() * arts.length)];
-    const newFrames = [...frames];
-    newFrames[index] = randomArt;
-    setFrames(newFrames);
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      {frames.map((frame, index) => (
-        <div 
-          key={index} 
-          className="border-2 border-gray-300 aspect-square flex items-center justify-center cursor-pointer"
-          onClick={() => handleFrameClick(index)}
-        >
-          {frame ? (
-            <div className="text-center">
-              <img src={frame.imageUrl} alt={frame.name} className="max-w-full max-h-full object-contain" />
-              <p className="mt-2">{frame.name}</p>
+    <div>
+      <h1>Art List</h1>
+      <ul>
+        {arts.map((art) => (
+          <li key={art.id}>
+            <button onClick={() => handleOpen(art)}>
+              <Image src={art.imageUrl} alt={art.name} width={300} height={300} className="max-w-full max-h-full object-contain" />
+            </button>
+          </li>
+        ))}
+      </ul>
+      {selectedArt && (
+        <Modal isOpen={open} onClose={handleClose}>
+          <div className="modal">
+            <Image src={selectedArt.imageUrl} alt={selectedArt.name} width={300} height={300} className="max-w-full max-h-full object-contain" />
+            <div className="text">
+              <h2>{selectedArt.name}</h2>
+              <p>HOC: {selectedArt.hoc}</p>
+              <p>USDT: {selectedArt.usdt}</p>
             </div>
-          ) : (
-            <p>Click to reveal art</p>
-          )}
-        </div>
-      ))}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -1,7 +1,9 @@
 /** @jsxImportSource frog/jsx */
+/* eslint-disable react/jsx-key */
+/* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
-import { collection, getDocs, limit, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, limit, query } from "firebase/firestore";
 import { db } from "../../components/Firebase";
 
 // Define the type for the art data fetched from Firestore
@@ -112,7 +114,7 @@ app.frame("/art", async (c) => {
         </div>
       ),
       intents: [
-        <Button action="/">Back</Button>,
+        <Button action="/" >Back</Button>,
         <Button action="/art">Next Art</Button>,
       ],
     });
