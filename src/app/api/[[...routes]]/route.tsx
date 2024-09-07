@@ -92,6 +92,8 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
+    const shareUrl = `/share?id=${encodeURIComponent(art.id)}&name=${encodeURIComponent(art.name)}&imageUrl=${encodeURIComponent(art.imageUrl)}`;
+
     return c.res({
       image: (
         <div
@@ -116,7 +118,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action="/share">Share</Button>,
+        <Button action={shareUrl}>Share</Button>,
       ],
     });
   } catch (error) {
@@ -144,7 +146,29 @@ app.frame("/art", async (c) => {
 
 // Share frame
 app.frame("/share", async (c) => {
-  const art = await fetchRandomArt(); // Fetch the art again to ensure we have the latest
+  const { searchParams } = new URL(c.url);
+  const id = searchParams.get('id');
+  const name = searchParams.get('name');
+  const imageUrl = searchParams.get('imageUrl');
+
+  if (!id || !name || !imageUrl) {
+    return c.res({
+      image: (
+        <div style={{
+          color: "white",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "2rem",
+          backgroundColor: "black",
+        }}>
+          Error: Missing art information
+        </div>
+      ),
+      intents: [<Button action="/">Back to Home</Button>],
+    });
+  }
 
   return c.res({
     image: (
@@ -161,16 +185,16 @@ app.frame("/share", async (c) => {
         }}
       >
         <img
-          src={art.imageUrl}
-          alt={art.name}
+          src={imageUrl}
+          alt={name}
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
-        <p>{art.name}</p>
+        <p>{name}</p>
       </div>
     ),
     intents: [
       <Button.Reset>Cancel</Button.Reset>,
-      <Button.Link href={`https://warpcast.com/~/compose?text=Check out my random PUSH art: ${art.name}&embeds[]=${c.url}`}>
+      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${name}&embeds[]=${c.url}`}>
         Share on Warpcast
       </Button.Link>,
     ],
