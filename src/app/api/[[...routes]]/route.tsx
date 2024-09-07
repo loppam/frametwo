@@ -1,6 +1,7 @@
 /** @jsxImportSource frog/jsx */
 /* eslint-disable react/jsx-key */
-/* eslint-disable @next/next/no-img-element */import { Button, Frog } from "frog";
+/* eslint-disable @next/next/no-img-element */ 
+import { Button, Frog } from "frog";
 import { handle } from "frog/next";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../components/Firebase";
@@ -86,7 +87,7 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
-    const encodedArt = encodeURIComponent(JSON.stringify(art));
+    const encodedArt = Buffer.from(JSON.stringify(art)).toString('base64');
     const mintUrl = `/mint?art=${encodedArt}`;
 
     return c.res({
@@ -147,7 +148,7 @@ app.frame("/mint", async (c) => {
 
   if (encodedArt) {
     try {
-      currentArt = JSON.parse(decodeURIComponent(encodedArt)) as Art;
+      currentArt = JSON.parse(Buffer.from(encodedArt, 'base64').toString()) as Art;
     } catch (error) {
       console.error("Error parsing art data:", error);
     }
@@ -169,6 +170,7 @@ app.frame("/mint", async (c) => {
           textAlign: "left",
         }}>
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
+          <p>Encoded Art: {encodedArt || 'Not found'}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
