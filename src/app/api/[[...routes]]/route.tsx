@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
 import { db } from "../../components/Firebase";
 
 // Define the type for the art data
@@ -12,9 +12,6 @@ type Art = {
   name: string;
   imageUrl: string;
 };
-
-// Create a cache to store the art data
-const artCache = new Map<string, Art>();
 
 // Initialize Frog app
 const app = new Frog({
@@ -35,12 +32,12 @@ const app = new Frog({
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
-  
+
   if (querySnapshot.empty) {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...doc.data() as Art,
+    ...(doc.data() as Art),
     id: doc.id,
   }));
 
@@ -48,6 +45,20 @@ async function fetchRandomArt(): Promise<Art> {
   const randomArt = artList[randomIndex];
 
   return randomArt;
+}
+
+// Function to fetch art by name from Firestore
+async function fetchArtByName(name: string): Promise<Art | null> {
+  const artCollection = collection(db, "art");
+  const q = query(artCollection, where("name", "==", name));
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
+  }
+
+  const doc = querySnapshot.docs[0];
+  return { ...(doc.data() as Art), id: doc.id };
 }
 
 // Function to mint NFT (save to Firestore)
@@ -62,8 +73,6 @@ async function mintNFT(address: string, art: Art) {
 
 // Home frame
 app.frame("/", (c) => {
-  // Clear the cache when returning to home
-  artCache.clear();
   return c.res({
     image: (
       <div
@@ -92,9 +101,6 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
-    // Cache the art data using its name as the key
-    artCache.set(art.name, art);
-
     return c.res({
       image: (
         <div
@@ -119,7 +125,9 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>Mint</Button>,
+        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>
+          Mint
+        </Button>,
       ],
     });
   } catch (error) {
@@ -148,26 +156,26 @@ app.frame("/art", async (c) => {
 // Mint frame
 app.frame("/mint", async (c) => {
   const artName = c.req.query("name");
-  
-  if (typeof artName !== 'string') {
+
+  if (typeof artName !== "string") {
     return c.res({
       image: (
-        <div style={{
-          color: "white",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          fontSize: "1rem",
-          backgroundColor: "black",
-          padding: "20px",
-          textAlign: "left",
-        }}>
+        <div
+          style={{
+            color: "white",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            fontSize: "1rem",
+            backgroundColor: "black",
+            padding: "20px",
+            textAlign: "left",
+          }}
+        >
           <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
           <p>Art Name: {artName}</p>
-          <p>Cache Size: {artCache.size}</p>
-          <p>Cache Keys: {Array.from(artCache.keys()).join(', ')}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -175,27 +183,27 @@ app.frame("/mint", async (c) => {
   }
 
   const decodedArtName = decodeURIComponent(artName);
-  const currentArt = artCache.get(decodedArtName);
+  const currentArt = await fetchArtByName(decodedArtName);
 
   if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
-        <div style={{
-          color: "white",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          fontSize: "1rem",
-          backgroundColor: "black",
-          padding: "20px",
-          textAlign: "left",
-        }}>
+        <div
+          style={{
+            color: "white",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            fontSize: "1rem",
+            backgroundColor: "black",
+            padding: "20px",
+            textAlign: "left",
+          }}
+        >
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
           <p>Art Name: {decodedArtName}</p>
-          <p>Cache Size: {artCache.size}</p>
-          <p>Cache Keys: {Array.from(artCache.keys()).join(', ')}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -205,11 +213,9 @@ app.frame("/mint", async (c) => {
   const { status } = c;
   const address = c.frameData?.address;
 
-  if (status === 'response' && address) {
+  if (status === "response" && address) {
     try {
       await mintNFT(address, currentArt);
-      // Clear the cache after successful minting
-      artCache.delete(decodedArtName);
       return c.res({
         image: (
           <div
