@@ -35,12 +35,12 @@ const app = new Frog({
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
-
+  
   if (querySnapshot.empty) {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...(doc.data() as Art),
+    ...doc.data() as Art,
     id: doc.id,
   }));
 
@@ -154,20 +154,18 @@ app.frame("/mint", async (c) => {
   if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "left",
-          }}
-        >
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
+        }}>
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
           <p>Cache Key: {cacheKey}</p>
           <p>Cache Size: {artCache.size}</p>
@@ -180,7 +178,7 @@ app.frame("/mint", async (c) => {
   const { status } = c;
   const address = c.frameData?.address;
 
-  if (status === "response" && address) {
+  if (status === 'response' && address) {
     try {
       await mintNFT(address, currentArt);
       // Clear the cache after successful minting
