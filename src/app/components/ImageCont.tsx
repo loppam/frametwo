@@ -47,6 +47,7 @@ const ImageCont = () => {
     };
 
     fetchArts();
+
   }, []);
 
   if (loading) {
@@ -64,7 +65,7 @@ const ImageCont = () => {
         {arts.map((art) => (
           <li key={art.id}>
             <button onClick={() => handleOpen(art)}>
-              <Image src={art.imageUrl} alt={art.name} width={300} height={300} className="max-w-full max-h-full object-contain" />
+              <img src={art.imageUrl} alt={art.name} width={300} height={300} className="max-w-full max-h-full object-contain" />
             </button>
           </li>
         ))}
@@ -72,7 +73,7 @@ const ImageCont = () => {
       {selectedArt && (
         <Modal isOpen={open} onClose={handleClose}>
           <div className="modal">
-            <Image src={selectedArt.imageUrl} alt={selectedArt.name} width={300} height={300} className="max-w-full max-h-full object-contain" />
+            <img src={selectedArt.imageUrl} alt={selectedArt.name} width={300} height={300} className="max-w-full max-h-full object-contain" />
             <div className="text">
               <h2>{selectedArt.name}</h2>
               <p>HOC: {selectedArt.hoc}</p>
