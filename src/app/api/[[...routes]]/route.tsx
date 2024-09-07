@@ -170,7 +170,7 @@ app.frame("/share", async (c) => {
     ),
     intents: [
       <Button.Reset>Cancel</Button.Reset>,
-      <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${art.name}&embeds[]=${c.url}`}>
+      <Button.Link href={`https://warpcast.com/~/compose?text=Check out my random PUSH art: ${art.name}&embeds[]=${c.url}`}>
         Share on Warpcast
       </Button.Link>,
     ],
