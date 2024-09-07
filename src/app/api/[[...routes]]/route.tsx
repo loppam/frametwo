@@ -32,12 +32,12 @@ const app = new Frog({
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
-
+  
   if (querySnapshot.empty) {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...(doc.data() as Art),
+    ...doc.data() as Art,
     id: doc.id,
   }));
 
@@ -58,7 +58,7 @@ async function fetchArtByName(name: string): Promise<Art | null> {
   }
 
   const doc = querySnapshot.docs[0];
-  return { ...(doc.data() as Art), id: doc.id };
+  return { ...doc.data() as Art, id: doc.id };
 }
 
 // Function to mint NFT (save to Firestore)
@@ -125,9 +125,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>
-          Mint
-        </Button>,
+        <Button action={`/mint?name=${encodeURIComponent(art.name)}`}>Mint</Button>,
       ],
     });
   } catch (error) {
@@ -156,24 +154,22 @@ app.frame("/art", async (c) => {
 // Mint frame
 app.frame("/mint", async (c) => {
   const artName = c.req.query("name");
-
-  if (typeof artName !== "string") {
+  
+  if (typeof artName !== 'string') {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "left",
-          }}
-        >
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
+        }}>
           <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
           <p>Art Name: {artName}</p>
         </div>
@@ -188,20 +184,18 @@ app.frame("/mint", async (c) => {
   if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "left",
-          }}
-        >
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
+        }}>
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
           <p>Art Name: {decodedArtName}</p>
         </div>
@@ -213,9 +207,14 @@ app.frame("/mint", async (c) => {
   const { status } = c;
   const address = c.frameData?.address;
 
-  if (status === "response" && address) {
+  if (status === 'response' && address) {
     try {
-      await mintNFT(address, currentArt);
+      // Fetch the art data again before minting
+      const artToMint = await fetchArtByName(decodedArtName);
+      if (!artToMint) {
+        throw new Error("Art not found when trying to mint");
+      }
+      await mintNFT(address, artToMint);
       return c.res({
         image: (
           <div
@@ -233,7 +232,7 @@ app.frame("/mint", async (c) => {
           >
             <p>NFT minted successfully!</p>
             <p>Address: {address}</p>
-            <p>Art: {currentArt.name}</p>
+            <p>Art: {artToMint.name}</p>
           </div>
         ),
         intents: [<Button action="/">Back to Home</Button>],
