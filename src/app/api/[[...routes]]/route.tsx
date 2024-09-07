@@ -77,7 +77,7 @@ async function fetchArtByName(name: string): Promise<Art | null> {
 
   return art;
 }
-
+const cachekeys = Array.from(artCache.keys()).join(", ");
 // Home frame
 app.frame("/", (c) => {
   return c.res({
@@ -162,6 +162,7 @@ app.frame("/art", async (c) => {
   }
 });
 
+
 // Share frame
 app.frame("/share", async (c) => {
   const artName = c.req.query("name");
@@ -189,9 +190,9 @@ app.frame("/share", async (c) => {
     });
   }
 
-  const decodedArtName = decodeURIComponent(artName);
-  const art = await fetchArtByName(decodedArtName);
-
+  // const decodedArtName = decodeURIComponent(artName);
+  const art = await fetchArtByName(cachekeys);
+  
   if (!art) {
     return c.res({
       image: (
@@ -208,8 +209,8 @@ app.frame("/share", async (c) => {
           textAlign: "center",
         }}>
           <h2 style={{ color: "red" }}>Error: Art not found</h2>
-          <p>Requested art name: {decodedArtName}</p>
-          <p>Cache keys: {Array.from(artCache.keys()).join(", ")}</p>
+          <p>Requested art name: {cachekeys}</p>
+          <p>Cache keys: {cachekeys}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
