@@ -1,9 +1,8 @@
 /** @jsxImportSource frog/jsx */
 /* eslint-disable react/jsx-key */
-/* eslint-disable @next/next/no-img-element */
-import { Button, Frog } from "frog";
+/* eslint-disable @next/next/no-img-element */import { Button, Frog } from "frog";
 import { handle } from "frog/next";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../components/Firebase";
 
 // Define the type for the art data
@@ -47,6 +46,16 @@ async function fetchRandomArt(): Promise<Art> {
   return randomArt;
 }
 
+// Function to mint NFT (save to Firestore)
+async function mintNFT(address: string, art: Art) {
+  const mintsCollection = collection(db, "mints");
+  await addDoc(mintsCollection, {
+    address,
+    artId: art.id,
+    mintedAt: new Date(),
+  });
+}
+
 // Home frame
 app.frame("/", async (c) => {
   return c.res({
@@ -77,6 +86,9 @@ app.frame("/art", async (c) => {
       throw new Error("Invalid art data");
     }
 
+    const encodedArt = encodeURIComponent(JSON.stringify(art));
+    const mintUrl = `/mint?art=${encodedArt}`;
+
     return c.res({
       image: (
         <div
@@ -101,7 +113,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action="/share">Share</Button>,
+        <Button action={mintUrl}>Mint</Button>,
       ],
     });
   } catch (error) {
@@ -127,64 +139,122 @@ app.frame("/art", async (c) => {
   }
 });
 
-// Share frame
-app.frame("/share", async (c) => {
-  try {
-    const art = await fetchRandomArt();
+// Mint frame
+app.frame("/mint", async (c) => {
+  const { searchParams } = new URL(c.url);
+  const encodedArt = searchParams.get('art');
+  let currentArt: Art | null = null;
 
-    if (!art || !art.imageUrl) {
-      throw new Error("Invalid art data");
+  if (encodedArt) {
+    try {
+      currentArt = JSON.parse(decodeURIComponent(encodedArt)) as Art;
+    } catch (error) {
+      console.error("Error parsing art data:", error);
     }
+  }
 
-    return c.res({
-      image: (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            backgroundColor: "black",
-            color: "white",
-            fontSize: "1rem",
-            padding: "20px",
-          }}
-        >
-          <img
-            src={art.imageUrl}
-            alt={art.name}
-            style={{ maxWidth: "80%", maxHeight: "60%" }}
-          />
-          <p>{art.name}</p>
-        </div>
-      ),
-      intents: [
-        <Button.Reset>Cancel</Button.Reset>,
-        <Button.Link href={`https://warpcast.com/~/compose?text=Check out this amazing art: ${encodeURIComponent(art.name)}&embeds[]=${encodeURIComponent(c.url)}`}>
-          Share on Warpcast
-        </Button.Link>,
-      ],
-    });
-  } catch (error) {
-    console.error("Error fetching art for sharing:", error);
+  if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
         <div style={{
           color: "white",
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          fontSize: "2rem",
+          fontSize: "1rem",
           backgroundColor: "black",
+          padding: "20px",
+          textAlign: "left",
         }}>
-          Error fetching art for sharing. Please try again.
+          <h2 style={{ color: "red" }}>Error: No art information found</h2>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
     });
   }
+
+  const { status } = c;
+  const address = c.frameData?.address;
+
+  if (status === 'response' && address) {
+    try {
+      await mintNFT(address, currentArt);
+      return c.res({
+        image: (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100vh",
+              backgroundColor: "black",
+              color: "white",
+              fontSize: "1rem",
+              padding: "20px",
+            }}
+          >
+            <p>NFT minted successfully!</p>
+            <p>Address: {address}</p>
+            <p>Art: {currentArt.name}</p>
+          </div>
+        ),
+        intents: [<Button action="/">Back to Home</Button>],
+      });
+    } catch (error) {
+      console.error("Error minting NFT:", error);
+      return c.res({
+        image: (
+          <div
+            style={{
+              color: "white",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100vh",
+              fontSize: "2rem",
+              backgroundColor: "black",
+            }}
+          >
+            Error minting NFT. Please try again.
+          </div>
+        ),
+        intents: [<Button action="/">Back to Home</Button>],
+      });
+    }
+  }
+
+  return c.res({
+    image: (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "black",
+          color: "white",
+          fontSize: "1rem",
+          padding: "20px",
+        }}
+      >
+        <img
+          src={currentArt.imageUrl}
+          alt={currentArt.name}
+          style={{ maxWidth: "80%", maxHeight: "60%" }}
+        />
+        <p>{currentArt.name}</p>
+        <p>Ready to mint this artwork?</p>
+      </div>
+    ),
+    intents: [
+      <Button action="/">Cancel</Button>,
+      <Button.Mint target="/mint">Mint NFT</Button.Mint>,
+    ],
+  });
 });
 
 // Export the Frog app handlers for GET and POST requests
