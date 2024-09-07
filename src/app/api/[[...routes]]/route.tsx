@@ -165,7 +165,7 @@ app.frame("/share", async (c) => {
           fontSize: "2rem",
           backgroundColor: "black",
         }}>
-          Error: Missing art information
+          Error: Missing art information {id} {name} {imageUrl}
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
