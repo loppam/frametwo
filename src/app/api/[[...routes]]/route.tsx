@@ -1,6 +1,6 @@
 /** @jsxImportSource frog/jsx */
 /* eslint-disable react/jsx-key */
-/* eslint-disable @next/next/no-img-element */ 
+/* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
 import { collection, getDocs, addDoc } from "firebase/firestore";
@@ -35,12 +35,12 @@ const app = new Frog({
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
-  
+
   if (querySnapshot.empty) {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...doc.data() as Art,
+    ...(doc.data() as Art),
     id: doc.id,
   }));
 
@@ -93,7 +93,7 @@ app.frame("/art", async (c) => {
     }
 
     // Cache the art data
-    const cacheKey = `art_${Date.now()}`;
+    const cacheKey = c.req.query("key") as string;
     artCache.set(cacheKey, art);
 
     return c.res({
@@ -148,24 +148,26 @@ app.frame("/art", async (c) => {
 
 // Mint frame
 app.frame("/mint", async (c) => {
-  const cacheKey = c.req.query('key') as string;
+  const cacheKey = c.req.query("key") as string;
   const currentArt = artCache.get(cacheKey);
 
   if (!currentArt || !currentArt.imageUrl) {
     return c.res({
       image: (
-        <div style={{
-          color: "white",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          fontSize: "1rem",
-          backgroundColor: "black",
-          padding: "20px",
-          textAlign: "left",
-        }}>
+        <div
+          style={{
+            color: "white",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            fontSize: "1rem",
+            backgroundColor: "black",
+            padding: "20px",
+            textAlign: "left",
+          }}
+        >
           <h2 style={{ color: "red" }}>Error: No art information found</h2>
           <p>Cache Key: {cacheKey}</p>
           <p>Cache Size: {artCache.size}</p>
@@ -178,7 +180,7 @@ app.frame("/mint", async (c) => {
   const { status } = c;
   const address = c.frameData?.address;
 
-  if (status === 'response' && address) {
+  if (status === "response" && address) {
     try {
       await mintNFT(address, currentArt);
       // Clear the cache after successful minting
