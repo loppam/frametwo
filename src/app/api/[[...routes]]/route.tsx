@@ -62,7 +62,7 @@ async function fetchArtByName(name: string): Promise<Art | null> {
 
   // If not in cache, fetch from Firestore
   const artCollection = collection(db, "art");
-  const q = query(artCollection, where("name", "==", artCache));
+  const q = query(artCollection, where("name", "==", name));
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) {
