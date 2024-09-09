@@ -77,9 +77,12 @@ async function fetchArtByName(name: string): Promise<Art | null> {
 
   return art;
 }
-const cachekeys = Array.from(artCache.keys()).join(", ");
+
 // Home frame
 app.frame("/", (c) => {
+  // Clear the cache when returning to the home frame
+  artCache.clear();
+
   return c.res({
     image: (
       <div
@@ -154,14 +157,12 @@ app.frame("/art", async (c) => {
           }}
         >
           <p>Error fetching art. Please try again.</p>
-          <p>Cache keys: {Array.from(artCache.keys()).join(", ")}</p>
         </div>
       ),
       intents: [<Button action="/">Back</Button>],
     });
   }
 });
-
 
 // Share frame
 app.frame("/share", async (c) => {
@@ -183,7 +184,6 @@ app.frame("/share", async (c) => {
           textAlign: "center",
         }}>
           <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
-          <p>Cache keys: {Array.from(artCache.keys()).join(", ")}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -192,7 +192,7 @@ app.frame("/share", async (c) => {
 
   const decodedArtName = decodeURIComponent(artName);
   const art = await fetchArtByName(decodedArtName);
-  
+
   if (!art) {
     return c.res({
       image: (
@@ -210,14 +210,14 @@ app.frame("/share", async (c) => {
         }}>
           <h2 style={{ color: "red" }}>Error: Art not found</h2>
           <p>Requested art name: {decodedArtName}</p>
-          <p>Cache keys: {cachekeys}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
     });
   }
+
   const shareText = `Check out this amazing art: ${art.name}`;
-  const frameUrl = `${c.url}/api`;
+  // const frameUrl = `${c.url.origin}/api`;
 
   return c.res({
     image: (
@@ -254,16 +254,18 @@ app.frame("/share", async (c) => {
 app.post("/share", async (c) => {
   const artName = c.req.query("name");
   if (typeof artName !== 'string') {
-    return c.json({ message: "Invalid art name" }, { status: 400 });
+    return c.json({ message: "Invalid art name" });
   }
 
   const decodedArtName = decodeURIComponent(artName);
   const art = await fetchArtByName(decodedArtName);
+
   if (!art) {
-    return c.json({ message: "Art not found" }, { status: 404 });
+    return c.json({ message: "Art not found" });
   }
+
   const shareText = `Check out this amazing art: ${art.name}`;
-  // const frameUrl = `${c.req.url.origin}/api`;
+  // const frameUrl = `${c.url.origin}/api`;
 
   return c.json({
     cast: shareText,
