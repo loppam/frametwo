@@ -35,12 +35,12 @@ const app = new Frog({
 async function fetchRandomArt(): Promise<Art> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
-
+  
   if (querySnapshot.empty) {
     throw new Error("No art found");
   }
   const artList = querySnapshot.docs.map((doc) => ({
-    ...(doc.data() as Art),
+    ...doc.data() as Art,
     id: doc.id,
   }));
 
@@ -70,7 +70,7 @@ async function fetchArtByName(name: string): Promise<Art | null> {
   }
 
   const doc = querySnapshot.docs[0];
-  const art = { ...(doc.data() as Art), id: doc.id };
+  const art = { ...doc.data() as Art, id: doc.id };
 
   // Cache the fetched art
   artCache.set(name, art);
@@ -135,9 +135,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/share?name=${encodeURIComponent(art.name)}`}>
-          Share
-        </Button>,
+        <Button action={`/share?name=${encodeURIComponent(art.name)}`}>Share</Button>,
       ],
     });
   } catch (error) {
@@ -169,26 +167,23 @@ app.frame("/art", async (c) => {
 // Share frame
 app.frame("/share", async (c) => {
   const artName = c.req.query("name");
-
-  if (typeof artName !== "string") {
+  
+  if (typeof artName !== 'string') {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "center",
+        }}>
           <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
-          <p>cache name: {artCache}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -201,20 +196,18 @@ app.frame("/share", async (c) => {
   if (!art) {
     return c.res({
       image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "1rem",
+          backgroundColor: "black",
+          padding: "20px",
+          textAlign: "center",
+        }}>
           <h2 style={{ color: "red" }}>Error: Art not found</h2>
           <p>Requested art name: {decodedArtName}</p>
         </div>
@@ -260,7 +253,7 @@ app.frame("/share", async (c) => {
 // Handle post action
 app.post("/share", async (c) => {
   const artName = c.req.query("name");
-  if (typeof artName !== "string") {
+  if (typeof artName !== 'string') {
     return c.json({ message: "Invalid art name" });
   }
 
