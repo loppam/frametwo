@@ -150,8 +150,8 @@ app.frame("/art", async (c) => {
 app.frame("/share", async (c) => {
   const { art, imageUrl } = await fetchRandomArt();
   const shareText = `Check out this amazing art Name: ${art.name}`;
-  const origin = c.url;
-  const frameUrl = `${origin}/api`;
+
+  const frameUrl = `https://frametwo.vercel.app/api/art/`;
 
   // const frameUrl = `${c.req.header("origin")}/api`;
   try {
@@ -184,7 +184,6 @@ app.frame("/share", async (c) => {
       ),
       intents: [
         <Button action="/">Cancel</Button>,
-        <Button action="post">Share on Warpcast</Button>,
         // <Button.Link href={`https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(cacheBustedUrl)}`}></Button.Link>
         <Button.Link
           href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
