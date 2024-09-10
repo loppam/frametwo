@@ -149,8 +149,12 @@ app.frame("/art", async (c) => {
 // Share frame
 app.frame("/share", async (c) => {
   const { art, imageUrl } = await fetchRandomArt();
-  const shareText = `Check out this amazing art: ${art.name}`;
-  const frameUrl = `${c.req.header("origin")}/api`;
+  const shareText = `Check out this amazing art Name: ${art.name}`;
+
+  const origin = c.req.header("origin") || "https://frametwo.vercel.app/";
+  const frameUrl = `${origin}/api`;
+
+  // const frameUrl = `${c.req.header("origin")}/api`;
   try {
     if (!imageUrl) {
       throw new Error("Url not found");
