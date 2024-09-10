@@ -53,7 +53,10 @@ async function fetchRandomArt(): Promise<{
 
   // Only cache the art if it's not already cached
   if (!artCache.has(randomArt.name)) {
-    artCache.set(randomArt.name, { ...randomArt, imageUrl: randomArt.imageUrl });
+    artCache.set(randomArt.name, {
+      ...randomArt,
+      imageUrl: randomArt.imageUrl,
+    });
   }
 
   return { art: randomArt, name: randomArt.name, imageUrl: randomArt.imageUrl }; // Return art, name, and image URL
@@ -90,7 +93,6 @@ app.frame("/art", async (c) => {
 
   const frameUrl = `https://frametwo.vercel.app/api/shared/`;
   try {
-
     if (!art.imageUrl || !art.name) {
       throw new Error("Invalid art data");
     }
@@ -120,10 +122,10 @@ app.frame("/art", async (c) => {
       intents: [
         <Button action="/">Back</Button>,
         <Button.Link
-        href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
-      >
-        Share on Warpcast
-      </Button.Link>,
+          href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
+        >
+          Share on Warpcast
+        </Button.Link>,
       ],
     });
   } catch (error) {
@@ -153,111 +155,10 @@ app.frame("/art", async (c) => {
   }
 });
 
-// Share frame
-app.frame("/share", async (c) => {
-  const { art, imageUrl } = await fetchRandomArt();
-  const shareText = `Check out this amazing art Name: ${art.name}`;
-
-  const frameUrl = `https://frametwo.vercel.app/api/shared/`;
-
-  // const frameUrl = `${c.req.header("origin")}/api`;
-  try {
-    if (!imageUrl) {
-      throw new Error("Url not found");
-    }
-    return c.res({
-      image: (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            backgroundColor: "black",
-            color: "white",
-            fontSize: "1rem",
-            padding: "20px",
-          }}
-        >
-          <img
-            src={art.imageUrl} // Use the cached image URL
-            alt={art.name}
-            style={{ maxWidth: "80%", maxHeight: "60%" }}
-          />
-          <p>{art.name}</p>
-          <p>Ready to share?</p>
-        </div>
-      ),
-      intents: [
-        <Button action="/">Cancel</Button>,
-        // <Button.Link href={`https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(cacheBustedUrl)}`}></Button.Link>
-        <Button.Link
-          href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
-        >
-          Share on Warpcast
-        </Button.Link>,
-      ],
-    });
-    //     return c.res({
-    //       image: (
-    //         <div style={{
-    //           color: "white",
-    //           display: "flex",
-    //           flexDirection: "column",
-    //           justifyContent: "center",
-    //           alignItems: "center",
-    //           height: "100vh",
-    //           fontSize: "1rem",
-    //           backgroundColor: "black",
-    //           padding: "20px",
-    //           textAlign: "center",
-    //         }}>
-    // <img src={imageUrl} style={{maxWidth: "80%", maxHeight: "70%"}}/>
-    //         </div>
-    //       ),
-    //       intents: [<Button action="/">Back to Home</Button>],
-    //     });
-
-    // const decodedArtName = decodeURIComponent(artName);
-
-    // Retrieve the art from the cache
-    // const art = artCache.get(decodedArtName);
-  } catch (error) {
-    console.error("cant find cached url:", error);
-    return c.res({
-      image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "center",
-          }}
-        >
-          <h2 style={{ color: "red" }}>Error: cached url not found</h2>
-          <p>current cache url :{imageUrl}</p>
-          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
-        </div>
-      ),
-      intents: [<Button action="/">Back to Home</Button>],
-    });
-  }
-});
-
-// Shared Frame 
+// Shared Frame
 app.frame("/shared", async (c) => {
-  // Retrieve the art from the cache using the name passed in the query
-  const artName = c.req.query.name; // Assuming the name is passed as a query parameter
-  const cachedArt = artCache.get(artName);
-
-  if (!cachedArt) {
+  const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
+  if (!imageUrl) {
     return c.res({
       image: (
         <div
@@ -275,7 +176,7 @@ app.frame("/shared", async (c) => {
           }}
         >
           <h2 style={{ color: "red" }}>Error: Art not found in cache</h2>
-          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
+          <p>Current cache keys: {Array.from(artCache.keys())}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -297,15 +198,13 @@ app.frame("/shared", async (c) => {
         }}
       >
         <img
-          src={cachedArt.imageUrl} // Use the cached image URL
+          src={imageUrl} // Use the cached image URL
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
-        <p>{cachedArt.name}</p>
+        <p>{art.name}</p>
       </div>
     ),
-    intents: [
-      <Button action="/">Get your own</Button>,
-    ],
+    intents: [<Button action="/">Get your own</Button>],
   });
 });
 
