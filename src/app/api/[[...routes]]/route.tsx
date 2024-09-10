@@ -112,7 +112,7 @@ app.frame("/art", async (c) => {
           }}
         >
           <img
-            src={imageUrl} // Use the cached image URL
+            src={art.imageUrl} // Use the cached image URL
             // alt={art.name}
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
@@ -155,59 +155,59 @@ app.frame("/art", async (c) => {
   }
 });
 
-// Shared Frame
-app.frame("/shared", async (c) => {
-  const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
-  if (!imageUrl) {
-    return c.res({
-      image: (
-        <div
-          style={{
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontSize: "1rem",
-            backgroundColor: "black",
-            padding: "20px",
-            textAlign: "center",
-          }}
-        >
-          <h2 style={{ color: "red" }}>Error: Art not found in cache</h2>
-          <p>Current cache keys: {Array.from(artCache.keys())}</p>
-        </div>
-      ),
-      intents: [<Button action="/">Back to Home</Button>],
-    });
-  }
+// // Shared Frame
+// app.frame("/shared", async (c) => {
+//   const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
+//   if (!imageUrl) {
+//     return c.res({
+//       image: (
+//         <div
+//           style={{
+//             color: "white",
+//             display: "flex",
+//             flexDirection: "column",
+//             justifyContent: "center",
+//             alignItems: "center",
+//             height: "100vh",
+//             fontSize: "1rem",
+//             backgroundColor: "black",
+//             padding: "20px",
+//             textAlign: "center",
+//           }}
+//         >
+//           <h2 style={{ color: "red" }}>Error: Art not found in cache</h2>
+//           <p>Current cache keys: {Array.from(artCache.keys())}</p>
+//         </div>
+//       ),
+//       intents: [<Button action="/">Back to Home</Button>],
+//     });
+//   }
 
-  return c.res({
-    image: (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          backgroundColor: "black",
-          color: "white",
-          fontSize: "1.5rem",
-        }}
-      >
-        <img
-          src={art.imageUrl} // Use the cached image URL
-          style={{ maxWidth: "80%", maxHeight: "70%" }}
-        />
-        <p>{art.id}</p>
-        <p>{art.name}</p>
-      </div>
-    ),
-    intents: [<Button action="/">Get your own</Button>],
-  });
-});
+//   return c.res({
+//     image: (
+//       <div
+//         style={{
+//           display: "flex",
+//           flexDirection: "column",
+//           justifyContent: "center",
+//           alignItems: "center",
+//           height: "100vh",
+//           backgroundColor: "black",
+//           color: "white",
+//           fontSize: "1.5rem",
+//         }}
+//       >
+//         <img
+//           src={art.imageUrl} // Use the cached image URL
+//           style={{ maxWidth: "80%", maxHeight: "70%" }}
+//         />
+//         <p>{art.id}</p>
+//         <p>{art.name}</p>
+//       </div>
+//     ),
+//     intents: [<Button action="/">Get your own</Button>],
+//   });
+// });
 
 // Export the Frog app handlers for GET and POST requests
 export const GET = handle(app);
