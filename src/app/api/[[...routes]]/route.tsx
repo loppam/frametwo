@@ -243,24 +243,24 @@ app.frame("/share", async (c) => {
 });
 
 // Handle post action
-app.post("/share", async (c) => {
-  const { art, imageUrl } = await fetchRandomArt();
+// app.post("/share", async (c) => {
+//   const { art, imageUrl } = await fetchRandomArt();
 
-  if (!imageUrl) {
-    return c.json({ message: "URL not found" });
-  }
+//   if (!imageUrl) {
+//     return c.json({ message: "URL not found" });
+//   }
 
-  if (!art) {
-    return c.json({ message: "Art not found" });
-  }
+//   if (!art) {
+//     return c.json({ message: "Art not found" });
+//   }
 
-  // const frameUrl = `${c.req.header("origin")}/api`; // Use request header to get the origin
+//   // const frameUrl = `${c.req.header("origin")}/api`; // Use request header to get the origin
 
-  return c.json({
-    cast: shareText,
-    // frames: [frameUrl],
-  });
-});
+//   return c.json({
+//     cast: shareText,
+//     // frames: [frameUrl],
+//   });
+// });
 
 // Export the Frog app handlers for GET and POST requests
 export const GET = handle(app);
