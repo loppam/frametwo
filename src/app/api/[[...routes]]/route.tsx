@@ -201,8 +201,8 @@ app.frame("/shared", async (c) => {
           src={art.imageUrl} // Use the cached image URL
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
-        <p>{art.name}</p>
         <p>{art.id}</p>
+        <p>{art.name}</p>
       </div>
     ),
     intents: [<Button action="/">Get your own</Button>],
