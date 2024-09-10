@@ -85,8 +85,11 @@ app.frame("/", (c) => {
 
 // Art display frame
 app.frame("/art", async (c) => {
+  const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
+  const shareText = `Check out this amazing art Name: ${art.name}`;
+
+  const frameUrl = `https://frametwo.vercel.app/api/shared/`;
   try {
-    const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
 
     if (!art.imageUrl || !art.name) {
       throw new Error("Invalid art data");
@@ -116,9 +119,11 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/share?name=${encodeURIComponent(imageUrl)}`}>
-          Share
-        </Button>, // Use the exported name
+        <Button.Link
+        href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
+      >
+        Share on Warpcast
+      </Button.Link>,
       ],
     });
   } catch (error) {
