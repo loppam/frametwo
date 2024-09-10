@@ -51,8 +51,10 @@ async function fetchRandomArt(): Promise<{
   const randomIndex = Math.floor(Math.random() * artList.length);
   const randomArt = artList[randomIndex];
 
-  // Cache the art using its name as the key, including the image URL
-  artCache.set(randomArt.name, { ...randomArt, imageUrl: randomArt.imageUrl });
+  // Only cache the art if it's not already cached
+  if (!artCache.has(randomArt.name)) {
+    artCache.set(randomArt.name, { ...randomArt, imageUrl: randomArt.imageUrl });
+  }
 
   return { art: randomArt, name: randomArt.name, imageUrl: randomArt.imageUrl }; // Return art, name, and image URL
 }
@@ -244,9 +246,37 @@ app.frame("/share", async (c) => {
   }
 });
 
-//Shared Frame start
+// Shared Frame 
 app.frame("/shared", async (c) => {
-  const { art, imageUrl } = await fetchRandomArt();
+  // Retrieve the art from the cache using the name passed in the query
+  const artName = c.req.query.name; // Assuming the name is passed as a query parameter
+  const cachedArt = artCache.get(artName);
+
+  if (!cachedArt) {
+    return c.res({
+      image: (
+        <div
+          style={{
+            color: "white",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            fontSize: "1rem",
+            backgroundColor: "black",
+            padding: "20px",
+            textAlign: "center",
+          }}
+        >
+          <h2 style={{ color: "red" }}>Error: Art not found in cache</h2>
+          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
+        </div>
+      ),
+      intents: [<Button action="/">Back to Home</Button>],
+    });
+  }
+
   return c.res({
     image: (
       <div
@@ -262,15 +292,14 @@ app.frame("/shared", async (c) => {
         }}
       >
         <img
-          src={imageUrl} // Use the cached image URL
+          src={cachedArt.imageUrl} // Use the cached image URL
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
-        <p>{art.name}</p>
+        <p>{cachedArt.name}</p>
       </div>
     ),
     intents: [
       <Button action="/">Get your own</Button>,
-
     ],
   });
 });
