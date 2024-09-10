@@ -247,7 +247,7 @@ app.post("/share", async (c) => {
   }
 
   const shareText = `Check out this amazing art: ${art.name}`;
-  const frameUrl = `${c.req.header("origin")}/api`; // Use request header to get the origin
+  // const frameUrl = `${c.req.header("origin")}/api`; // Use request header to get the origin
 
   return c.json({
     cast: shareText,
