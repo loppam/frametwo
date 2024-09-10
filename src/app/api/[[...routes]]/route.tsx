@@ -88,16 +88,13 @@ app.frame("/", (c) => {
 
 // Art display frame
 app.frame("/art", async (c) => {
+  const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
+  const shareText = `Check out this amazing art Name: ${art.name}`;
+  const frameUrl = c.url;
+  // const frameUrl = `https://frametwo.vercel.app/api/shared/`;
   try {
-    const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
-
     if (!art.imageUrl || !art.name) {
       throw new Error("Invalid art data");
-    }
-
-    // Cache the art if it's not already cached
-    if (!artCache.has(art.name)) {
-      artCache.set(art.name, { ...art, imageUrl });
     }
 
     return c.res({
@@ -125,9 +122,9 @@ app.frame("/art", async (c) => {
       intents: [
         <Button action="/">Back</Button>,
         <Button.Link
-          href={`/shared?name=${encodeURIComponent(art.name)}`} // Pass the art name as a query parameter
+          href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
         >
-          Share
+          Share on Warpcast
         </Button.Link>,
       ],
     });
@@ -160,10 +157,8 @@ app.frame("/art", async (c) => {
 
 // Shared Frame
 app.frame("/shared", async (c) => {
-  const artName = c.req.query.name; // Get the name from the query
-  const cachedArt = artCache.get(artName); // Retrieve the art from the cache
-
-  if (!cachedArt) {
+  const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
+  if (!imageUrl) {
     return c.res({
       image: (
         <div
@@ -181,7 +176,7 @@ app.frame("/shared", async (c) => {
           }}
         >
           <h2 style={{ color: "red" }}>Error: Art not found in cache</h2>
-          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
+          <p>Current cache keys: {Array.from(artCache.keys())}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -203,15 +198,14 @@ app.frame("/shared", async (c) => {
         }}
       >
         <img
-          src={cachedArt.imageUrl} // Use the cached image URL
+          src={art.imageUrl} // Use the cached image URL
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
-        <p>{cachedArt.name}</p>
+        <p>{art.id}</p>
+        <p>{art.name}</p>
       </div>
     ),
-    intents: [
-      <Button action="/">Get your own</Button>,
-    ],
+    intents: [<Button action="/">Get your own</Button>],
   });
 });
 
