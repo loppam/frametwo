@@ -151,7 +151,7 @@ app.frame("/share", async (c) => {
   const { art, imageUrl } = await fetchRandomArt();
   const shareText = `Check out this amazing art Name: ${art.name}`;
 
-  const frameUrl = `https://frametwo.vercel.app/api/art/`;
+  const frameUrl = `https://frametwo.vercel.app/api/shared/`;
 
   // const frameUrl = `${c.req.header("origin")}/api`;
   try {
@@ -244,25 +244,36 @@ app.frame("/share", async (c) => {
   }
 });
 
-// Handle post action
-// app.post("/share", async (c) => {
-//   const { art, imageUrl } = await fetchRandomArt();
+//Shared Frame start
+app.frame("/shared", async (c) => {
+  const { art, imageUrl } = await fetchRandomArt();
+  return c.res({
+    image: (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "black",
+          color: "white",
+          fontSize: "1.5rem",
+        }}
+      >
+        <img
+          src={imageUrl} // Use the cached image URL
+          style={{ maxWidth: "80%", maxHeight: "70%" }}
+        />
+        <p>{art.name}</p>
+      </div>
+    ),
+    intents: [
+      <Button action="/">Get your own</Button>,
 
-//   if (!imageUrl) {
-//     return c.json({ message: "URL not found" });
-//   }
-
-//   if (!art) {
-//     return c.json({ message: "Art not found" });
-//   }
-
-//   // const frameUrl = `${c.req.header("origin")}/api`; // Use request header to get the origin
-
-//   return c.json({
-//     cast: shareText,
-//     // frames: [frameUrl],
-//   });
-// });
+    ],
+  });
+});
 
 // Export the Frog app handlers for GET and POST requests
 export const GET = handle(app);
