@@ -116,6 +116,7 @@ app.frame("/art", async (c) => {
             // alt={art.name}
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
+          <p>{art.imageUrl}</p>
           <p>{art.name}</p>
         </div>
       ),
