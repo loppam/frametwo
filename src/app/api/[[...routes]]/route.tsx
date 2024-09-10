@@ -90,7 +90,7 @@ app.frame("/", (c) => {
 app.frame("/art", async (c) => {
   const { art, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
   const shareText = `Check out this amazing art Name: ${art.name}`;
-  const frameUrl = c.url;
+  const frameUrl = `${c.url}?cacheBust=${Date.now()}`;
   // const frameUrl = `https://frametwo.vercel.app/api/shared/`;
   try {
     if (!art.imageUrl || !art.name) {
@@ -116,7 +116,6 @@ app.frame("/art", async (c) => {
             // alt={art.name}
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
-          <p>{art.imageUrl}</p>
           <p>{art.name}</p>
         </div>
       ),
