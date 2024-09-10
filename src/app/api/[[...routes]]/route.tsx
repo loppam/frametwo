@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Button, Frog } from "frog";
 import { handle } from "frog/next";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../components/Firebase";
 
 // Define the type for the art data
@@ -32,7 +32,7 @@ const app = new Frog({
 });
 
 // Function to fetch a random art piece from Firestore
-async function fetchRandomArt(): Promise<Art> {
+async function fetchRandomArt(): Promise<{ art: Art; name: string; imageUrl: string }> {
   const artCollection = collection(db, "art");
   const querySnapshot = await getDocs(artCollection);
   
@@ -47,35 +47,10 @@ async function fetchRandomArt(): Promise<Art> {
   const randomIndex = Math.floor(Math.random() * artList.length);
   const randomArt = artList[randomIndex];
 
-  // Cache the art using its name as the key
-  artCache.set(randomArt.name, randomArt);
+  // Cache the art using its name as the key, including the image URL
+  artCache.set(randomArt.name, { ...randomArt, imageUrl: randomArt.imageUrl });
 
-  return randomArt;
-}
-
-// Function to fetch art by name from Firestore
-async function fetchArtByName(name: string): Promise<Art | null> {
-  // Check cache first
-  if (artCache.has(name)) {
-    return artCache.get(name)!;
-  }
-
-  // If not in cache, fetch from Firestore
-  const artCollection = collection(db, "art");
-  const q = query(artCollection, where("name", "==", name));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    return null;
-  }
-
-  const doc = querySnapshot.docs[0];
-  const art = { ...doc.data() as Art, id: doc.id };
-
-  // Cache the fetched art
-  artCache.set(name, art);
-
-  return art;
+  return { art: randomArt, name: randomArt.name, imageUrl: randomArt.imageUrl }; // Return art, name, and image URL
 }
 
 // Home frame
@@ -105,7 +80,7 @@ app.frame("/", (c) => {
 // Art display frame
 app.frame("/art", async (c) => {
   try {
-    const art = await fetchRandomArt();
+    const { art, name, imageUrl } = await fetchRandomArt(); // Destructure to get art, name, and image URL
 
     if (!art || !art.imageUrl || !art.name) {
       throw new Error("Invalid art data");
@@ -126,7 +101,7 @@ app.frame("/art", async (c) => {
           }}
         >
           <img
-            src={art.imageUrl}
+            src={imageUrl} // Use the cached image URL
             alt={art.name}
             style={{ maxWidth: "80%", maxHeight: "70%" }}
           />
@@ -135,7 +110,7 @@ app.frame("/art", async (c) => {
       ),
       intents: [
         <Button action="/">Back</Button>,
-        <Button action={`/share?name=${encodeURIComponent(art.name)}`}>Share</Button>,
+        <Button action={`/share?name=${encodeURIComponent(name)}`}>Share</Button>, // Use the exported name
       ],
     });
   } catch (error) {
@@ -157,6 +132,7 @@ app.frame("/art", async (c) => {
           }}
         >
           <p>Error fetching art. Please try again.</p>
+          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
         </div>
       ),
       intents: [<Button action="/">Back</Button>],
@@ -184,6 +160,7 @@ app.frame("/share", async (c) => {
           textAlign: "center",
         }}>
           <h2 style={{ color: "red" }}>Error: Invalid art name</h2>
+          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -191,7 +168,9 @@ app.frame("/share", async (c) => {
   }
 
   const decodedArtName = decodeURIComponent(artName);
-  const art = await fetchArtByName(decodedArtName);
+  
+  // Retrieve the art from the cache
+  const art = artCache.get(decodedArtName);
 
   if (!art) {
     return c.res({
@@ -210,6 +189,7 @@ app.frame("/share", async (c) => {
         }}>
           <h2 style={{ color: "red" }}>Error: Art not found</h2>
           <p>Requested art name: {decodedArtName}</p>
+          <p>Current cache keys: {Array.from(artCache.keys()).join(", ")}</p>
         </div>
       ),
       intents: [<Button action="/">Back to Home</Button>],
@@ -235,7 +215,7 @@ app.frame("/share", async (c) => {
         }}
       >
         <img
-          src={art.imageUrl}
+          src={art.imageUrl} // Use the cached image URL
           alt={art.name}
           style={{ maxWidth: "80%", maxHeight: "60%" }}
         />
@@ -258,7 +238,7 @@ app.post("/share", async (c) => {
   }
 
   const decodedArtName = decodeURIComponent(artName);
-  const art = await fetchArtByName(decodedArtName);
+  const art = artCache.get(decodedArtName); // Retrieve from cache
 
   if (!art) {
     return c.json({ message: "Art not found" });
