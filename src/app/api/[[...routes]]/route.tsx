@@ -150,8 +150,7 @@ app.frame("/art", async (c) => {
 app.frame("/share", async (c) => {
   const { art, imageUrl } = await fetchRandomArt();
   const shareText = `Check out this amazing art Name: ${art.name}`;
-
-  const origin = c.req.header("origin");
+  const origin = c.url;
   const frameUrl = `${origin}/api`;
 
   // const frameUrl = `${c.req.header("origin")}/api`;
