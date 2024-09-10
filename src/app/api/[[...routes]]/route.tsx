@@ -149,6 +149,8 @@ app.frame("/art", async (c) => {
 // Share frame
 app.frame("/share", async (c) => {
   const { art, imageUrl } = await fetchRandomArt();
+  const shareText = `Check out this amazing art: ${art.name}`;
+  const frameUrl = `${c.req.header("origin")}/api`;
   try {
     if (!imageUrl) {
       throw new Error("Url not found");
@@ -180,6 +182,12 @@ app.frame("/share", async (c) => {
       intents: [
         <Button action="/">Cancel</Button>,
         <Button action="post">Share on Warpcast</Button>,
+        // <Button.Link href={`https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(cacheBustedUrl)}`}></Button.Link>
+        <Button.Link
+          href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
+        >
+          Share on Warpcast
+        </Button.Link>,
       ],
     });
     //     return c.res({
@@ -246,7 +254,6 @@ app.post("/share", async (c) => {
     return c.json({ message: "Art not found" });
   }
 
-  const shareText = `Check out this amazing art: ${art.name}`;
   // const frameUrl = `${c.req.header("origin")}/api`; // Use request header to get the origin
 
   return c.json({
