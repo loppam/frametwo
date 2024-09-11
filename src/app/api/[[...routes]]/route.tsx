@@ -165,6 +165,7 @@ app.frame("/art", async (c) => {
           style={{ maxWidth: "80%", maxHeight: "70%" }}
         />
         <p>{art.name}</p>
+        {/* <p>Note: This is not your Random art, You get yours on share</p> */}
       </div>
     ),
     intents: [
@@ -174,6 +175,7 @@ app.frame("/art", async (c) => {
       >
         Share on Warpcast
       </Button.Link>,
+      <Button.Link href="https://warpcast.com/push-">Follow Push</Button.Link>,
     ],
   });
 });
