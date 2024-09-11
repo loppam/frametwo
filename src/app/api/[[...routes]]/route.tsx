@@ -88,14 +88,28 @@ app.frame("/", (c) => {
 
 app.frame("/art", async (c) => {
   const queryParams = c.req.query(); // Access query parameters
-  const artId = queryParams.id; // Extract 'id' from query parameters
+  const artId = queryParams.id; // Extract 'id' from the query parameters
   let art;
 
   if (artId && artCache.has(artId)) {
     // Fetch the cached art using the ID from the query string
     art = artCache.get(artId);
+  } else if (artId) {
+    // If artId is present but not cached, fetch from Firestore
+    const artCollection = collection(db, "art");
+    const querySnapshot = await getDocs(artCollection);
+    const artList = querySnapshot.docs.map((doc) => ({
+      ...(doc.data() as Art),
+      id: doc.id,
+    }));
+    art = artList.find((a) => a.id === artId);
+
+    // Cache the art if found
+    if (art) {
+      artCache.set(art.id, art);
+    }
   } else {
-    // Fetch a random art piece if no artId or art is not cached
+    // If no artId is provided, fetch a random art piece
     const randomArtData = await fetchRandomArt();
     art = randomArtData.art;
 
@@ -128,7 +142,7 @@ app.frame("/art", async (c) => {
 
   // Text for sharing
   const shareText = `Check out this amazing art: ${art.name}`;
-  // Include the art ID in the frame URL for sharing
+  // Embed the art ID in the URL to ensure the same art is displayed after sharing
   const frameUrl = `${c.url}?id=${art.id}`;
 
   return c.res({
@@ -163,7 +177,6 @@ app.frame("/art", async (c) => {
     ],
   });
 });
-
 
 // Export the Frog app handlers for GET and POST requests
 export const GET = handle(app);
