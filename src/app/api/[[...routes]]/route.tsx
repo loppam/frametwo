@@ -173,7 +173,7 @@ app.frame("/art", async (c) => {
       <Button.Link
         href={`https://warpcast.com/~/compose?text=${shareText}&embeds[]=${frameUrl}`}
       >
-        Share on Warpcast
+        Share
       </Button.Link>,
       <Button.Link href="https://warpcast.com/push-">Follow Push</Button.Link>,
     ],
