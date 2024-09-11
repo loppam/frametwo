@@ -141,7 +141,7 @@ app.frame("/art", async (c) => {
   }
 
   // Text for sharing
-  const shareText = `Check out this amazing art: ${art.name}`;
+  const shareText = `Check out this Random art thanks @push-`;
   // Embed the art ID in the URL to ensure the same art is displayed after sharing
   const frameUrl = `${c.url}?id=${art.id}`;
 
