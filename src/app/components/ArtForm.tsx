@@ -4,20 +4,24 @@ import { collection, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "./Firebase"; // Ensure this path is correct
 
-interface ArtResponse {
-  data: {
-    insertedId: string;
-  };
-}
+type ArtFormProps = {
+  updateArtList: (newArt: any) => void; // Callback to update art list in the parent component
+};
 
-const ArtForm: React.FC = () => {
+const ArtForm: React.FC<ArtFormProps> = ({ updateArtList }) => {
   const [name, setName] = useState<string>("");
   const [hoc, setHoc] = useState<string>("");
   const [usdt, setUsdt] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
+  const [status, setStatus] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true); // Start loading
+    setError(null); // Reset error
+
     try {
       if (!file) throw new Error("No file selected");
 
@@ -27,23 +31,30 @@ const ArtForm: React.FC = () => {
       const imageUrl = await getDownloadURL(storageRef);
 
       // Add document to Firestore
-      const docRef = await addDoc(collection(db, "art"), {
+      const newArt = {
         name,
         hoc: Number(hoc),
         usdt: Number(usdt),
         imageUrl,
         createdAt: new Date(),
-      });
+      };
+      const docRef = await addDoc(collection(db, "art"), newArt);
 
-      alert("Art and image uploaded successfully!");
-      // Reset form fields
+      setStatus("Art and image uploaded successfully!");
+
+      // Update the parent state with the new art
+      updateArtList({ id: docRef.id, ...newArt });
+
+      // Reset form fields on success
       setName("");
       setHoc("");
       setUsdt("");
       setFile(null);
     } catch (error: any) {
       console.error("Error uploading art and image:", error);
-      alert(error.message || "Failed to upload art and image.");
+      setError(error.message || "Failed to upload art and image.");
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -60,40 +71,48 @@ const ArtForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Name:</label>
+    <div className="loginformm">
+      <form className="" onSubmit={handleSubmit}>
         <input
           type="text"
+          placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
         />
-      </div>
-      <div>
-        <label>HOC:</label>
         <input
           type="number"
+          placeholder="Creation Hour(s)"
           value={hoc}
           onChange={(e) => setHoc(e.target.value)}
           required
         />
-      </div>
-      <div>
-        <label>USDT:</label>
         <input
           type="number"
+          placeholder="Value(USDT)"
           value={usdt}
           onChange={(e) => setUsdt(e.target.value)}
           required
         />
-      </div>
-      <div>
-        <label>Image:</label>
-        <input type="file" name="file" onChange={handleFileChange} required />
-      </div>
-      <button type="submit">Submit</button>
-    </form>
+        <input
+          type="file"
+          accept="image/png, image/gif, image/jpeg, image/jpg, image/webp"
+          name="file"
+          onChange={handleFileChange}
+          required
+        />
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Submitting..." : "Submit"}
+        </button>
+        {status}
+        {/* Display error if any */}
+        {error && <p className="error">{error}</p>}
+      </form>
+
+      {/* Show a loading spinner or any indicator */}
+      {loading && <p>Uploading art, please wait...</p>}
+    </div>
   );
 };
 

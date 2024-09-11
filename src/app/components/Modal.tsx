@@ -28,7 +28,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       <div
         onClick={(e) => e.stopPropagation()} // Prevents modal from closing when clicking inside
         style={{
-          background: "white",
+          background: "transparent",
           color: "black",
           height: 400,
           width: 600,
